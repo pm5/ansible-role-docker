@@ -1,0 +1,36 @@
+---
+- name: Ensure Linux kernel version >= 3.10.
+  fail: msg='Docker requires Linux kernel version >= 3.10.'
+  when: '{{ ansible_kernel | regex_replace("\.\d+\-.*", "") | version_compare("3.10", "<") }}'
+
+- name: Ensure apt packages are installed.
+  apt: name={{ item }} state=present
+  with_items: '{{ docker_apt_packages }}'
+
+- name: Ensure GPG key is installed.
+  apt_key: id={{ docker_gpg_key }} keyserver={{ docker_gpg_keyserver }}
+
+- name: Ensure apt repository is present.
+  apt_repository: repo='deb https://apt.dockerproject.org/repo {{ ansible_lsb.id | lower }}-{{ ansible_lsb.codename }} main'
+  when: ansible_lsb.id == "Ubuntu" or ansible_lsb.id == "Debian"
+
+- name: Update apt cache.
+  apt: update_cache=yes cache_valid_time=86400
+
+- name: Ensure prerequisites are installed.
+  apt: name={{ item }} state=present
+  with_items: '{{ docker_prerequisites_packages[ansible_lsb.codename] }}'
+  register: docker_prerequisites
+  when: docker_prerequisites_packages[ansible_lsb.codename] is defined
+
+- name: Reboot if prerequisites are installed.
+  fail: msg='Install 3.13 kernel which is required by Docker on Ubuntu Precise. Reboot required.'
+  when: ansible_lsb.codename == 'precise' and docker_prerequisites | changed
+
+- name: Ensure Docker packages are installed.
+  apt: name={{ item }} state=present
+  with_items: '{{ docker_packages }}'
+  notify: validate docker
+
+- name: Ensure Docker service is enabled.
+  service: name=docker enabled=yes state=started

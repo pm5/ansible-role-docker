@@ -1,0 +1,24 @@
+docker_apt_packages:
+  - apt-transport-https
+  - ca-certificates
+
+docker_packages:
+  - docker-engine
+
+docker_gpg_key: 58118E89F3A912897C070ADBF76221572C52609D
+
+docker_gpg_keyserver: hkp://p80.pool.sks-keyservers.net:80
+
+docker_prerequisites_packages:
+  xenial: []
+  wily:
+    - linux-image-extra-{{ ansible_kernel }}
+  vivid:
+    - linux-image-extra-{{ ansible_kernel }}
+  trusty:
+    - linux-image-extra-{{ ansible_kernel }}
+    - apparmor
+  precise:
+    - linux-image-generic-lts-trusty
+    - linux-headers-generic-lts-trusty
+    - apparmor
